@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<languages>
+  <language name="English" id="en">
+    <enums>
+      <bmcdavid>
+        <episerver>
+          <claimscriteria>
+            <claimcondition>
+              <equals>Equal To</equals>
+              <equalscaseinsensitive>Equal To (ignore case)</equalscaseinsensitive>
+              <notequals>Not Equal</notequals>
+              <notequalscaseinsensitive>Not Equal (ignore case)</notequalscaseinsensitive>
+              <contains>Contains</contains>
+              <containscaseinsensitive>Contains (ignore case)</containscaseinsensitive>
+              <notcontains>NotContains</notcontains>
+              <notcontainscaseinsensitive>NotContains (ignore case)</notcontainscaseinsensitive>
+              <startswith>Starts With</startswith>
+              <startswithcaseinsensitive>Starts With (ignore case)</startswithcaseinsensitive>
+              <notstartswith>Not Starts With</notstartswith>
+              <notstartswithcaseinsensitive>Not Starts With (ignore case)</notstartswithcaseinsensitive>
+              <endswith>Ends With</endswith>
+              <endswithcaseinsensitive>Ends With (ignore case)</endswithcaseinsensitive>
+              <notendswith>Not Ends With</notendswith>
+              <notendswithcaseinsensitive>Not Ends With (ignore case)</notendswithcaseinsensitive>
+            </claimcondition>
+          </claimscriteria>
+        </episerver>
+      </bmcdavid>
+    </enums>
+  </language>
+</languages>

@@ -1,3 +1,4 @@
+using bmcdavid.Episerver.SynchronizedProviderExtensions;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.Security;
@@ -13,39 +14,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Helpers;
 
 [assembly: OwinStartup(typeof(AlloyWeb.Startup))]
 
 namespace AlloyWeb
 {
-  public class Startup
+    public class Startup
   {
     private const string LogoutUrl = "/util/logout.aspx";
     private readonly IServiceLocator _serviceLocator;
     private readonly AzureGraphServiceOptions _azureGraphServiceOptions;
     private readonly Func<AzureGraphService> _azureGraphFactory;
     private readonly Func<ISynchronizingUserService> _syncUserServiceFactory;
+    private readonly Func<IExtendedUserTools> _extendedUserToolsFactory;
 
     /// <summary>
     /// Empty constructor for Activator.CreateInstance used by Owin Startup
     /// </summary>
-    public Startup() : this(null, null, null) { }
+    public Startup() : this(null, null, null, null) { }
 
-    public Startup(AzureGraphServiceOptions azureGraphServiceOptions, Func<AzureGraphService> azureGraphFactory, Func<ISynchronizingUserService> syncUserServiceFactory)
+    public Startup(AzureGraphServiceOptions azureGraphServiceOptions, Func<AzureGraphService> azureGraphFactory, Func<ISynchronizingUserService> syncUserServiceFactory, Func<IExtendedUserTools> extendedUserToolsFactory)
     {
       _serviceLocator = ServiceLocator.Current;
       _azureGraphServiceOptions = azureGraphServiceOptions ?? _serviceLocator.GetInstance<AzureGraphServiceOptions>();
       _azureGraphFactory = azureGraphFactory ?? (() => _serviceLocator.GetInstance<AzureGraphService>());
       _syncUserServiceFactory = syncUserServiceFactory ?? (() => _serviceLocator.GetInstance<ISynchronizingUserService>());
+      _extendedUserToolsFactory = extendedUserToolsFactory ?? (() => _serviceLocator.GetInstance<IExtendedUserTools>());
     }
 
     public void Configuration(IAppBuilder app)
     {
-      // below are needed for groups to display in UI
-      //app.CreatePerOwinContext<UIRoleProvider>(() => new TestRoleProvider(_azureGraphFactory()));
-      //app.CreatePerOwinContext<UIUserProvider>(() => new TestUserProvider());
-
       // Enable cookie authentication, used to store the claims between requests 
       app.SetDefaultSignInAsAuthenticationType(WsFederationAuthenticationDefaults.AuthenticationType);
 
@@ -95,6 +95,12 @@ namespace AlloyWeb
 
             // Sync user and the roles to EPiServer in the background
             await _syncUserServiceFactory().SynchronizeAsync(ctx.AuthenticationTicket.Identity);
+
+            // Set users loging date and manually assigned roles
+            var extendedUserTools = _extendedUserToolsFactory();
+            await extendedUserTools.SetExtendedRolesAsync(ctx.AuthenticationTicket.Identity, DateTime.UtcNow);
+            // Sets visitor group roles as assigned claim roles
+            await extendedUserTools.AddVisitorGroupRolesAsClaimsAsync(ctx.AuthenticationTicket.Identity, new HttpContextWrapper(HttpContext.Current));
           }
         }
       });
@@ -123,21 +129,11 @@ namespace AlloyWeb
     public void ConfigureContainer(ServiceConfigurationContext context)
     {
       context.Services
-        //.AddTransient<UIUserProvider>(s => HttpContext.Current.GetOwinContext().Get<UIUserProvider>())
-        //.AddTransient<UIRoleProvider>(s => HttpContext.Current.GetOwinContext().Get<UIRoleProvider>())
-        //.AddTransient<SecurityEntityProvider>(s => new TestSecurityProvider(s.GetInstance<UIRoleProvider>()))
-        //.AddTransient<IQueryableNotificationUsers>(s => new TestSecurityProvider(s.GetInstance<UIRoleProvider>()))
-
         .AddTransient<AzureGraphService>()
-        //.AddTransient<UIUserProvider, TestUserProvider>()
-        //.AddTransient<UIRoleProvider, TestRoleProvider>()
-        //.AddTransient<SecurityEntityProvider, AzureAdfsSecurityProvider>()
-        // apply the synchronizing provider as the default
-        .AddTransient<SecurityEntityProvider, SynchronizingRolesSecurityEntityProvider>()
-        // wraps default with Azure AD graph client
-        .Intercept<SecurityEntityProvider>((locator, defaultSecurityProvider) =>
-          new AzureAdfsSecurityProvider(defaultSecurityProvider, locator.GetInstance<AzureGraphService>())
-        )
+      // wraps default with Azure AD graph client
+      //.Intercept<SecurityEntityProvider>((locator, defaultSecurityProvider) =>
+      //  new AzureAdfsSecurityProvider(defaultSecurityProvider, locator.GetInstance<AzureGraphService>())
+      //)
       ;
     }
 
@@ -145,12 +141,6 @@ namespace AlloyWeb
 
     public void Uninitialize(InitializationEngine context) { }
   }
-
-  //EPiServer.Security.SynchronizingRolesSecurityEntityProvider
-  //EPiServer.UI.Edit.MembershipBrowser
-  //public Injected<EPiServer.Security.SecurityEntityProvider> SecurityEntityProvider { get; set; }
-  //System.Security.Claims.ClaimsIdentity
-  // IPrincipal: System.Security.Claims.ClaimsPrincipal
 
   public class AzureAdfsSecurityProvider : SecurityEntityProvider
   {

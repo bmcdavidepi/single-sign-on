@@ -23,7 +23,7 @@ namespace AlloyWeb
       ClientSecret = !string.IsNullOrWhiteSpace(clientSecret) ? clientSecret : ConfigurationManager.AppSettings["ClientSecret"];
       GraphUrl = !string.IsNullOrWhiteSpace(graphUrl) ? graphUrl : ConfigurationManager.AppSettings["GraphUrl"];
       TenantName = !string.IsNullOrWhiteSpace(tenantName) ? tenantName : ConfigurationManager.AppSettings["TenantName"];
-      TenantId = !string.IsNullOrWhiteSpace(tenantName) ? tenantName : ConfigurationManager.AppSettings["TenantId"];
+      TenantId = !string.IsNullOrWhiteSpace(tenantId) ? tenantId : ConfigurationManager.AppSettings["TenantId"];
       MetadataAddress = !string.IsNullOrWhiteSpace(metaAddress) ? metaAddress : ConfigurationManager.AppSettings["MetadataAddress"];
       WtRealm = !string.IsNullOrWhiteSpace(wtRealm) ? metaAddress : ConfigurationManager.AppSettings["Wtrealm"];
     }
